@@ -62,3 +62,19 @@ Each rule has the same shape: the rule itself, then **Why** and **How to apply**
 - Third-party uploads: pasting code to gists, diagram renderers, screenshot services
 
 Authorization for one such action does not extend to others. "Yes, push" does not mean "yes, also open a PR and tag people."
+
+---
+
+## 8. Refresh and rebase onto the base branch *before* starting work
+
+**Why:** If the base (the PR target, e.g. `origin/dev`) moved while you weren't looking, you discover the overlap as PR conflicts after the work is already done, squashed, and pushed — the expensive time to resolve it. Catching it up front is cheap.
+
+**How to apply:** At the start of a task on an existing branch, `git fetch origin` and rebase onto the current base before editing — not after a PR shows conflicts. Confirm the real base (`gh pr view <n> --json baseRefName`; don't assume `main`). Watch for a stale remote base: `origin/dev` can lag far behind the local tip a branch was cut from — sanity-check with `git rev-list --count origin/<base>..HEAD` and `…HEAD..origin/<base>` before treating it as current. (Rule 4 still governs the force-push-with-lease + PR flow; Rule 5/7 still gate the push.)
+
+---
+
+## 9. "Push" means a new commit, never amend
+
+**Why:** I want each shipped change to be its own commit on the branch. Amending or squashing rewrites history and forces a force-push — not what I want by default.
+
+**How to apply:** When I say "push" (or "ship"), stage the changed files and make a **new** `git commit`, then `git push`. Only `git commit --amend` or squash when I explicitly say "amend" or "squash". This composes with Rule 7 — still wait for the explicit push/ship word before committing or pushing at all.
