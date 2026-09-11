@@ -1,24 +1,57 @@
-# LLM agent context — Bakhtiyar Ospanov
+# claude-config
 
-Tool-agnostic dump of identity, rules, workflow, and credentials. Any LLM coding agent (Claude Code, Codex, Gemini CLI, Cursor, Aider, etc.) can be bootstrapped from this directory.
+Global Claude Code hooks, in a form that can be committed and reinstalled:
+the scripts from `~/.claude/hooks/` and the `hooks` block of
+`~/.claude/settings.json`. Nothing else from `settings.json` lives here.
 
-## How to use
+    hooks/
+      comment-guard/      comment-guard.py, comment-diff-guard.py, comment_rules.py
+      commit-guard/       git-commit-guard.sh
+      commit-message/     commit-message-guard.py, judge.md
+      mr-description/     mr-description-guard.py
+      doc-judge/          prompt.md
+      script-judge/       prompt.md
+    hooks.json            the hooks block, home directory written as $HOME
+    dump.sh               ~/.claude -> repo
+    update.sh             repo -> ~/.claude
 
-**Quick path:** paste [[SYSTEM]] into the agent's system prompt or instructions slot (`AGENTS.md`, `GEMINI.md`, `CLAUDE.md`, custom-instructions field, etc.).
+The `.md` files hold the text of prompt hooks, which get pasted into
+settings.json on install and are never copied into ~/.claude/hooks.
 
-**Detailed path:** point the agent at this directory and tell it to read every file. The numbered prefix is the suggested read order.
+## Use
 
-## Files
+After editing hooks on your machine, run:
 
-| File                   | Purpose                                                                                                                |
-| ---------------------- | ---------------------------------------------------------------------------------------------------------------------- |
-| [[00-identity]]        | Who I am, response-style defaults, date interpretation                                                                 |
-| [[01-rules]]           | 7 distilled behavioral rules (the "don'ts" and "always") with reasons — full 14 live in [[SYSTEM]]                     |
-| [[02-plugins]]         | Claude-Code-only — plugins (caveman, karpathy, mattpocock/skills) + custom skill (scheme, body under `skills/scheme/`) |
-| [[03-hooks]]           | Claude-Code-only — `git-commit-guard` hook (script under `claude-config/hooks/`)                                       |
-| [[04-claude-settings]] | Claude-Code-only — global `settings.json` dump (under `claude-config/`)                                                |
-| [[SYSTEM]]             | Single-file paste-ready compilation of 00–04                                                                           |
+    ./dump.sh && git diff
 
-## Updating this dump
+On a new machine, or to install these hooks for someone else, run:
 
-When a new rule emerges in conversation, add it to [[01-rules]] (or the relevant file) and re-compile [[SYSTEM]] by concatenating 00–04 with their headings. Keep [[SYSTEM]] under ~5k tokens.
+    git clone <this repo> && cd claude-config && ./update.sh
+
+`update.sh` does three things:
+
+- copies the scripts
+- merges `hooks.json` into `settings.json`, keeping hooks that didn't come
+  from here and replacing ones an earlier update added
+- saves `settings.json.bak.<time>` before changing anything
+
+Then restart any open Claude Code sessions.
+
+## Requirements
+
+You need `bash`, `jq`, `python3`, `git` and `rsync`. macOS ships all of
+them, with `python3` coming from the Xcode command line tools.
+
+## What the hooks do
+
+- `comment-guard/` flags edits that add many comments or leave a region
+  dense with them. It runs once after each Write/Edit, and again at the end
+  of each turn against the git diff, which catches edits made through Bash.
+- `commit-guard/` blocks git commit and push unless the latest user
+  message asks for it. It also supports commit grants and per-repo
+  protected branches through `.claude/push-policy.json`.
+- `commit-message/` requires a Conventional Commits prefix, and a Haiku
+  judge (`judge.md`) reviews the message itself.
+- `mr-description/` enforces the MR/PR description format.
+- `doc-judge/` is a Haiku judge for new or grown Markdown docs.
+- `script-judge/` is a Haiku judge for new script files.

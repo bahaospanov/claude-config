@@ -1,0 +1,98 @@
+{
+  "PostToolUse": [
+    {
+      "matcher": "Write|Edit",
+      "hooks": [
+        {
+          "type": "command",
+          "command": "$HOME/.claude/hooks/comment-guard/comment-guard.py",
+          "timeout": 10
+        },
+        {
+          "type": "prompt",
+          "prompt": "@hooks/doc-judge/prompt.md",
+          "timeout": 30,
+          "model": "claude-haiku-4-5-20251001",
+          "continueOnBlock": true,
+          "statusMessage": "judging comments"
+        },
+        {
+          "type": "prompt",
+          "prompt": "@hooks/script-judge/prompt.md",
+          "timeout": 30,
+          "model": "claude-haiku-4-5-20251001",
+          "continueOnBlock": true,
+          "statusMessage": "judging script"
+        }
+      ]
+    }
+  ],
+  "PreToolUse": [
+    {
+      "matcher": "Bash",
+      "hooks": [
+        {
+          "type": "command",
+          "command": "$HOME/.claude/hooks/commit-message/commit-message-guard.py",
+          "if": "Bash(git commit*)",
+          "timeout": 10
+        },
+        {
+          "type": "command",
+          "command": "$HOME/.claude/hooks/mr-description/mr-description-guard.py",
+          "timeout": 10
+        },
+        {
+          "type": "prompt",
+          "prompt": "@hooks/commit-message/judge.md",
+          "if": "Bash(git commit*)",
+          "timeout": 30,
+          "model": "claude-haiku-4-5-20251001",
+          "continueOnBlock": true,
+          "statusMessage": "judging message"
+        }
+      ]
+    },
+    {
+      "matcher": "Write|Edit",
+      "hooks": [
+        {
+          "type": "command",
+          "command": "$HOME/.claude/hooks/comment-guard/comment-diff-guard.py gate",
+          "timeout": 15
+        }
+      ]
+    },
+    {
+      "matcher": "Bash|Write|Edit",
+      "hooks": [
+        {
+          "type": "command",
+          "command": "$HOME/.claude/hooks/comment-guard/comment-diff-guard.py claim",
+          "timeout": 10
+        }
+      ]
+    },
+    {
+      "matcher": "Bash",
+      "hooks": [
+        {
+          "type": "command",
+          "command": "$HOME/.claude/hooks/commit-guard/git-commit-guard.sh",
+          "if": "Bash(git *)"
+        }
+      ]
+    }
+  ],
+  "Stop": [
+    {
+      "hooks": [
+        {
+          "type": "command",
+          "command": "$HOME/.claude/hooks/comment-guard/comment-diff-guard.py check",
+          "timeout": 20
+        }
+      ]
+    }
+  ]
+}
